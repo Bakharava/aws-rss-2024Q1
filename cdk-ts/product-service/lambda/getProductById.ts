@@ -36,8 +36,10 @@ export const products = [
         title: "ProductName",
     },
 ];
-exports.handler = async (event: any) => {
-    if (products) {
+exports.handler = async (event: any, context: any) => {
+    const productId = event['pathParameters']['productId']
+    const product = products.find(product=> product.id === productId);
+    if (product) {
         return {
             statusCode: 200,
             headers: {
@@ -45,7 +47,7 @@ exports.handler = async (event: any) => {
                 "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(products),
+            body: JSON.stringify(product),
         };
     }
 
@@ -56,6 +58,6 @@ exports.handler = async (event: any) => {
             "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ message: "Products not found" }),
+        body: JSON.stringify({ message: "Product not found" }),
     };
 };

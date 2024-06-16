@@ -72,13 +72,22 @@ export class CdkTsStack extends cdk.Stack {
           handler: 'getProducts.handler',
       });
 
+      const getProductById = new lambda.Function(this, 'GetProductByIdFunction', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'getProductById.handler',
+      });
+
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,
           proxy: false,
       });
 
-      const getProductsListResource = api.root.addResource('products');
-      getProductsListResource.addMethod('GET');
+      const productsResource = api.root.addResource('products');
+      productsResource.addMethod('GET');
+
+      const productByIdResource = productsResource.addResource('{productId}')
+      productByIdResource.addMethod('GET', new apigateway.LambdaIntegration(getProductById))
 
 
   }
