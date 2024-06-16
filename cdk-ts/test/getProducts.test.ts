@@ -1,4 +1,5 @@
-const products = [
+const {handler} = require('../product-service/lambda/getProducts');
+const productList = [
     {
         description: "Short Product Description1",
         id: "7567ec4b-b10c-48c5-9345-fc73c48a80aa",
@@ -36,26 +37,9 @@ const products = [
         title: "ProductName",
     },
 ];
-exports.handler = async (event: any) => {
-    if (products) {
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(products),
-        };
-    }
-
-    return {
-        statusCode: 404,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: "Products not found" }),
-    };
-};
+describe('Get products',  () => {
+    it('should return list of products', async () => {
+        const response = await handler()
+        expect(response.body).toEqual(JSON.stringify(productList))
+    });
+})
