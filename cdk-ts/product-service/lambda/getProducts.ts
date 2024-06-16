@@ -50,7 +50,7 @@ exports.handler = async (event: any) => {
     }
 
     return {
-        statusCode: 400,
+        statusCode: 404,
         headers: {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
