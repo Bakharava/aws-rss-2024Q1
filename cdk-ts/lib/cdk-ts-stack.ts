@@ -77,6 +77,19 @@ export class CdkTsStack extends cdk.Stack {
           tableName: "Stock",
       });
 
+      const fillTables = new lambda.Function(this, 'FillTables', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'fillDBTables.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
+      });
+
+      productsTable.grantReadWriteData(fillTables);
+      stockTable.grantReadWriteData(fillTables);
+
       const getProductsList = new lambda.Function(this, 'GetProductsListFunction', {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
@@ -103,6 +116,19 @@ export class CdkTsStack extends cdk.Stack {
       productsTable.grantReadWriteData(getProductById);
       stockTable.grantReadWriteData(getProductById);
 
+      const createProduct = new lambda.Function(this, 'CreateProductFunction', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'createProduct.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
+      });
+
+      productsTable.grantReadWriteData(createProduct);
+      stockTable.grantReadWriteData(createProduct);
+
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,
           proxy: false,
@@ -110,21 +136,9 @@ export class CdkTsStack extends cdk.Stack {
 
       const productsResource = api.root.addResource('products');
       productsResource.addMethod('GET');
+      productsResource.addMethod('POST', new apigateway.LambdaIntegration(createProduct));
 
       const productByIdResource = productsResource.addResource('{productId}')
-      productByIdResource.addMethod('GET', new apigateway.LambdaIntegration(getProductById))
-
-      const fillTables = new lambda.Function(this, 'FillTables', {
-          runtime: lambda.Runtime.NODEJS_20_X,
-          code: lambda.Code.fromAsset('product-service/lambda'),
-          handler: 'fillDBTables.handler',
-          environment: {
-              PRODUCTS_TABLE: productsTable.tableName,
-              STOCK_TABLE: stockTable.tableName,
-          }
-      });
-
-      productsTable.grantReadWriteData(fillTables);
-      stockTable.grantReadWriteData(fillTables);
+      productByIdResource.addMethod('GET', new apigateway.LambdaIntegration(getProductById));
   }
 }
