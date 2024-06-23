@@ -12,8 +12,8 @@ exports.handler = async (event: any) => {
     }
 
     try {
-        const { Items: products } = await documentClient.send(new ScanCommand({ TableName: 'Products' }));
-        const { Items: stocks } = await documentClient.send(new ScanCommand({ TableName: 'Stock' }));
+        const { Items: products } = await documentClient.send(new ScanCommand({ TableName: process.env.PRODUCTS_TABLE }));
+        const { Items: stocks } = await documentClient.send(new ScanCommand({ TableName: process.env.STOCK_TABLE }));
 
 
 

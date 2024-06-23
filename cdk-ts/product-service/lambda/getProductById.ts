@@ -13,7 +13,7 @@ exports.handler = async (event: any, context: any) => {
 
     try {
         const productId = event['pathParameters']['productId']
-        const { Items: products } = await documentClient.send(new ScanCommand({ TableName: 'Products' }));
+        const { Items: products } = await documentClient.send(new ScanCommand({ TableName: process.env.PRODUCTS_TABLE }));
 
         const product = products?.find(product => product.id === productId);
 
@@ -26,7 +26,7 @@ exports.handler = async (event: any, context: any) => {
         }
 
         const stocksTableParams = {
-            TableName: 'Stock',
+            TableName: process.env.STOCK_TABLE,
             Key: {
                 product_id: productId,
             },
