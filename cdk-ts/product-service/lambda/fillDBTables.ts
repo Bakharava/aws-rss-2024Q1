@@ -70,39 +70,37 @@ export const stockData = [
     },
 ];
 
-export const handler = async (event: any) => {
+export const handler = async () => {
     try {
         const tableNameForProducts = 'Products';
 
         if (!tableNameForProducts) {
-            throw new Error('Table name for products is missing');
+            console.error('Table name for products is missing');
         }
 
-        const productsTableCommand = new BatchWriteCommand({
+        const productsTableWriteCommand = new BatchWriteCommand({
             RequestItems: {
                 [tableNameForProducts]: productsData.map((item) => ({
                     PutRequest: { Item: item },
                 })),
             },
         });
-        const productsTableResponse = await documentClient.send(productsTableCommand);
-        console.log(productsTableResponse);
+        await documentClient.send(productsTableWriteCommand);
 
         const tableNameForStock = 'Stock';
 
         if (!tableNameForStock) {
-            throw new Error('Table name for stock is missing');
+            console.error('Table name for stock is missing');
         }
 
-        const stocksTableCommand = new BatchWriteCommand({
+        const stockTableWriteCommand = new BatchWriteCommand({
             RequestItems: {
                 [tableNameForStock]: stockData.map((item) => ({
                     PutRequest: { Item: item },
                 })),
             },
         });
-        const stocksTableResponse = await documentClient.send(stocksTableCommand);
-        console.log(stocksTableResponse);
+        await documentClient.send(stockTableWriteCommand);
 
     } catch (error) {
         console.error(error);
