@@ -12,6 +12,7 @@ const checkIsBodyValid = (body: any) =>
     typeof body?.count === 'number';
 
 export const handler = async (event: any) => {
+    console.log('Create product event', event);
     const headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",

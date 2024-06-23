@@ -5,6 +5,9 @@ const client = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(client);
 
 exports.handler = async (event: any, context: any) => {
+    console.log('Get product event', event);
+    console.log('Get product context', context);
+
     const headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",

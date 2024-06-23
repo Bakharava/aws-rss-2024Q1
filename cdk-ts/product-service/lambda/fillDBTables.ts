@@ -70,7 +70,9 @@ export const stockData = [
     },
 ];
 
-export const handler = async () => {
+export const handler = async (event: any) => {
+    console.log('Fill table', event);
+
     try {
         const tableNameForProducts = 'Products';
 
