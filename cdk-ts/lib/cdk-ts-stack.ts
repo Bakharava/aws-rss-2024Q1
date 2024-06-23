@@ -81,13 +81,27 @@ export class CdkTsStack extends cdk.Stack {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
           handler: 'getProducts.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
       });
+
+      productsTable.grantReadWriteData(getProductsList);
+      stockTable.grantReadWriteData(getProductsList);
 
       const getProductById = new lambda.Function(this, 'GetProductByIdFunction', {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
           handler: 'getProductById.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
       });
+
+      productsTable.grantReadWriteData(getProductById);
+      stockTable.grantReadWriteData(getProductById);
 
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,
@@ -106,7 +120,7 @@ export class CdkTsStack extends cdk.Stack {
           handler: 'fillDBTables.handler',
           environment: {
               PRODUCTS_TABLE: productsTable.tableName,
-              STOCKS_TABLE: stockTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
           }
       });
 
