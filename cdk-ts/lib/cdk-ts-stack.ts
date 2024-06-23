@@ -8,6 +8,7 @@ import {
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 
 export class CdkTsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -66,6 +67,16 @@ export class CdkTsStack extends cdk.Stack {
       sources: [s3d.Source.asset("../dist")],
     });
 
+      const productsTable = new dynamodb.Table(this, 'ProductsTable', {
+          partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+          tableName: "Products",
+      });
+
+      const stockTable = new dynamodb.Table(this, 'StockTable', {
+          partitionKey: { name: 'product_id', type: dynamodb.AttributeType.STRING },
+          tableName: "Stock",
+      });
+
       const getProductsList = new lambda.Function(this, 'GetProductsListFunction', {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
@@ -89,6 +100,17 @@ export class CdkTsStack extends cdk.Stack {
       const productByIdResource = productsResource.addResource('{productId}')
       productByIdResource.addMethod('GET', new apigateway.LambdaIntegration(getProductById))
 
+      const fillTables = new lambda.Function(this, 'FillTables', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'fillDBTables.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCKS_TABLE: stockTable.tableName,
+          }
+      });
 
+      productsTable.grantReadWriteData(fillTables);
+      stockTable.grantReadWriteData(fillTables);
   }
 }
