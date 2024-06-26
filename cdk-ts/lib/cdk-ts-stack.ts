@@ -8,6 +8,7 @@ import {
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 
 export class CdkTsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -66,17 +67,67 @@ export class CdkTsStack extends cdk.Stack {
       sources: [s3d.Source.asset("../dist")],
     });
 
+      const productsTable = new dynamodb.Table(this, 'ProductsTable', {
+          partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+          tableName: "Products",
+      });
+
+      const stockTable = new dynamodb.Table(this, 'StockTable', {
+          partitionKey: { name: 'product_id', type: dynamodb.AttributeType.STRING },
+          tableName: "Stock",
+      });
+
+      const fillTables = new lambda.Function(this, 'FillTables', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'fillDBTables.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
+      });
+
+      productsTable.grantReadWriteData(fillTables);
+      stockTable.grantReadWriteData(fillTables);
+
       const getProductsList = new lambda.Function(this, 'GetProductsListFunction', {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
           handler: 'getProducts.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
       });
+
+      productsTable.grantReadWriteData(getProductsList);
+      stockTable.grantReadWriteData(getProductsList);
 
       const getProductById = new lambda.Function(this, 'GetProductByIdFunction', {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
           handler: 'getProductById.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
       });
+
+      productsTable.grantReadWriteData(getProductById);
+      stockTable.grantReadWriteData(getProductById);
+
+      const createProduct = new lambda.Function(this, 'CreateProductFunction', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'createProduct.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
+          }
+      });
+
+      productsTable.grantReadWriteData(createProduct);
+      stockTable.grantReadWriteData(createProduct);
 
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,
@@ -85,10 +136,9 @@ export class CdkTsStack extends cdk.Stack {
 
       const productsResource = api.root.addResource('products');
       productsResource.addMethod('GET');
+      productsResource.addMethod('POST', new apigateway.LambdaIntegration(createProduct));
 
       const productByIdResource = productsResource.addResource('{productId}')
-      productByIdResource.addMethod('GET', new apigateway.LambdaIntegration(getProductById))
-
-
+      productByIdResource.addMethod('GET', new apigateway.LambdaIntegration(getProductById));
   }
 }

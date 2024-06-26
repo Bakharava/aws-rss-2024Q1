@@ -1,63 +1,62 @@
-export const products = [
-    {
-        description: "Short Product Description1",
-        id: "7567ec4b-b10c-48c5-9345-fc73c48a80aa",
-        price: 24,
-        title: "ProductOne",
-    },
-    {
-        description: "Short Product Description7",
-        id: "7567ec4b-b10c-48c5-9345-fc73c48a80a1",
-        price: 15,
-        title: "ProductTitle",
-    },
-    {
-        description: "Short Product Description2",
-        id: "7567ec4b-b10c-48c5-9345-fc73c48a80a3",
-        price: 23,
-        title: "Product",
-    },
-    {
-        description: "Short Product Description4",
-        id: "7567ec4b-b10c-48c5-9345-fc73348a80a1",
-        price: 15,
-        title: "ProductTest",
-    },
-    {
-        description: "Short Product Descriptio1",
-        id: "7567ec4b-b10c-48c5-9445-fc73c48a80a2",
-        price: 23,
-        title: "Product2",
-    },
-    {
-        description: "Short Product Description7",
-        id: "7567ec4b-b10c-45c5-9345-fc73c48a80a1",
-        price: 15,
-        title: "ProductName",
-    },
-];
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import {DynamoDBDocumentClient, GetCommand, ScanCommand} from '@aws-sdk/lib-dynamodb';
+
+const client = new DynamoDBClient({});
+const documentClient = DynamoDBDocumentClient.from(client);
+
 exports.handler = async (event: any, context: any) => {
-    const productId = event['pathParameters']['productId']
-    const product = products.find(product=> product.id === productId);
-    if (product) {
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(product),
-        };
+    console.log('Get product event', event);
+    console.log('Get product context', context);
+
+    const headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
+        "Content-Type": "application/json"
     }
 
-    return {
-        statusCode: 404,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, Delete, OPTIONS",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: "Product not found" }),
-    };
+    try {
+        const productId = event['pathParameters']['productId']
+        const { Items: products } = await documentClient.send(new ScanCommand({ TableName: process.env.PRODUCTS_TABLE }));
+
+        const product = products?.find(product => product.id === productId);
+
+        if(!product) {
+            return {
+                statusCode: 404,
+                headers,
+                body: JSON.stringify({ message: "Product not found" }),
+            };
+        }
+
+        const stocksTableParams = {
+            TableName: process.env.STOCK_TABLE,
+            Key: {
+                product_id: productId,
+            },
+        };
+        const { Item: stock } = await documentClient.send(new GetCommand(stocksTableParams));
+
+        const productWithStock = { ...product, count: stock?.count };
+
+        if (productWithStock && productWithStock.count > 0) {
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify(productWithStock),
+            };
+        }
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ message: "Product out of stock" }),
+        };
+
+    } catch (err) {
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ message: "Something went wrong" }),
+        };
+    }
 };
