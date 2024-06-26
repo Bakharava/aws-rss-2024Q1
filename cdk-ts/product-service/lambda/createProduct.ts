@@ -20,7 +20,7 @@ export const handler = async (event: any) => {
     }
 
     try {
-        const body = event.body;
+        const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
 
         if (!checkIsBodyValid(body)) {
             return {
