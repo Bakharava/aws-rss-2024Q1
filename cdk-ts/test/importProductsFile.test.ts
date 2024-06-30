@@ -21,7 +21,7 @@ describe('Import file handler', () => {
 
         const response = await handler(event as any);
 
-        expect(response.body).toBe(JSON.stringify({ message: "Missing file name to upload" }));
+        expect(response.body).toBe({ message: "Missing file name to upload" });
     });
 
     it('should return signed URL if name is not empty', async () => {
@@ -35,7 +35,7 @@ describe('Import file handler', () => {
 
         const response = await handler(event as any);
 
-        expect(response.body).toEqual(JSON.stringify({url: 'http://pre-signed-url'}));
+        expect(response.body).toEqual('http://pre-signed-url');
         expect(mockedGetSignedUrl).toHaveBeenCalledWith(
             expect.any(mockedClient),
             expect.any(PutObjectCommand),

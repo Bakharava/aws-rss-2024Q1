@@ -57,6 +57,6 @@ describe('Parse imported file handler', () => {
 
         const result = await handler(mockEvent);
 
-        expect(result.body).toBe(JSON.stringify({ message: 'File successfully parsed' }));
+        expect(result.body).toEqual({ message: 'File successfully parsed' });
     });
 });

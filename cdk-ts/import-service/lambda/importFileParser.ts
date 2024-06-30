@@ -16,7 +16,7 @@ export const setResponse = (
             "Access-Control-Allow-Methods": "*",
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: body,
     };
 };
 
