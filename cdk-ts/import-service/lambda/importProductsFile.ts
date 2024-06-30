@@ -1,10 +1,25 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import {setResponse} from "../../utils/response";
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 
 const client = new S3Client({});
 const bucketName = process.env.BUCKET_NAME;
 const key = process.env.BUCKET_FOLDER_NAME;
+
+export const setResponse = (
+    statusCode: number = 200,
+    body = {},
+) => {
+    return {
+        statusCode,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    };
+};
 
 exports.handler = async (event: any) => {
     console.log('Upload file with products list event', event);
@@ -19,6 +34,7 @@ exports.handler = async (event: any) => {
         const command = new PutObjectCommand({
                 Bucket: bucketName,
                 Key: `${key}/${uploadedFileName}`,
+                ContentType: 'text/csv',
             });
 
         const signedUrl = await getSignedUrl(

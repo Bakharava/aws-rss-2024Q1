@@ -1,9 +1,24 @@
 import { CopyObjectCommand, DeleteObjectCommand ,GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import {setResponse} from "../../utils/response";
 import * as csv from "csv-parser";
 import { Readable } from "stream";
 
 const client = new S3Client({});
+
+export const setResponse = (
+    statusCode: number = 200,
+    body = {},
+) => {
+    return {
+        statusCode,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    };
+};
 
 exports.handler = async (event: any) => {
     console.log('Upload file with products list event', event);

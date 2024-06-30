@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-// import { CdkTsStack } from '../lib/cdk-ts-stack';
+import { CdkTsStack } from '../lib/cdk-ts-stack';
 import {CdkImportStack} from "../lib/cdk-import-stack";
 
 const app = new cdk.App();
-// new CdkTsStack(app, 'CdkTsStack', {});
+new CdkTsStack(app, 'CdkTsStack', {});
 
 new CdkImportStack(app, 'CdkImportStack', {
     /* If you don't specify 'env', this stack will be environment-agnostic.

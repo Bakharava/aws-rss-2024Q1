@@ -5,6 +5,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as s3notification from 'aws-cdk-lib/aws-s3-notifications';
+import { BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 
 export class CdkImportStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -21,6 +22,7 @@ export class CdkImportStack extends cdk.Stack {
                 },
             ],
             bucketName: "bakharava-import-bucket",
+            blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
