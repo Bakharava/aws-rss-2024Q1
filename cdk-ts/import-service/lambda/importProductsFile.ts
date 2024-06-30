@@ -17,7 +17,7 @@ export const setResponse = (
             "Access-Control-Allow-Methods": "*",
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: body,
     };
 };
 
@@ -43,7 +43,7 @@ export const handler = async (event: any) => {
             { expiresIn: 3600 },
         );
 
-        return setResponse(200, { url: signedUrl });
+        return setResponse(200, signedUrl);
     } catch (err) {
         return setResponse(500, { message: "Something went wrong" });
     }

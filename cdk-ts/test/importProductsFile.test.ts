@@ -55,6 +55,6 @@ describe('Import file handler', () => {
         const response = await handler(event as any);
 
         expect(response.statusCode).toBe(500);
-        expect(response.body).toBe(JSON.stringify({ message: "Something went wrong" }));
+        expect(response.body).toBe({ message: "Something went wrong" });
     });
 });

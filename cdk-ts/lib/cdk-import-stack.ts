@@ -58,12 +58,12 @@ export class CdkImportStack extends cdk.Stack {
             resources: [importBucket.bucketArn + "/*"],
         }))
 
-        const api = new apigateway.RestApi(this, 'ImportApi');
+        const api = new apigateway.RestApi(this, 'ImportApi', {cloudWatchRole: true,  defaultCorsPreflightOptions: {
+                allowOrigins: apigateway.Cors.ALL_ORIGINS,
+                allowMethods: apigateway.Cors.ALL_METHODS,
+            },});
         const uploadFileAPI = api.root.addResource('import');
-        uploadFileAPI.addMethod('GET', new apigateway.LambdaIntegration(importProductsFile), {requestParameters: {
-                "method.request.querystring.name": true,
-            },
-        });
+        uploadFileAPI.addMethod('GET', new apigateway.LambdaIntegration(importProductsFile));
 
         importBucket.addEventNotification(
             s3.EventType.OBJECT_CREATED,

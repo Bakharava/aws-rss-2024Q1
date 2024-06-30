@@ -20,7 +20,7 @@ export const setResponse = (
     };
 };
 
-exports.handler = async (event: any) => {
+export const handler = async (event: any) => {
     console.log('Upload file with products list event', event);
 
     const bucketName = event.Records[0].s3.bucket.name;
@@ -34,12 +34,13 @@ exports.handler = async (event: any) => {
         if (!data) {
             throw new Error("Error of reading data from S3");
         }
-
+        const results: any[] = [];
         await new Promise<void>((resolve, reject) => {
             data
                 .pipe(csv())
-                .on("data", (data) => console.log(data))
+                .on("data", (data) => results.push(data))
                 .on("end", async () => {
+                    console.log("Data res: ", results);
                     await client.send(
                         new CopyObjectCommand({
                             Bucket: bucketName,
