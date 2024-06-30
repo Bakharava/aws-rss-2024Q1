@@ -21,7 +21,7 @@ export const setResponse = (
     };
 };
 
-exports.handler = async (event: any) => {
+export const handler = async (event: any) => {
     console.log('Upload file with products list event', event);
 
     try {
