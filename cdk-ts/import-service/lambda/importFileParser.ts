@@ -45,7 +45,7 @@ export const handler = async (event: any) => {
                         new CopyObjectCommand({
                             Bucket: bucketName,
                             CopySource: `${bucketName}/${key}`,
-                            Key: key.replace('uploaded', 'parsed'),
+                            Key: key.replace('uploaded/', 'parsed/'),
                         })
                     );
                     await client.send(
