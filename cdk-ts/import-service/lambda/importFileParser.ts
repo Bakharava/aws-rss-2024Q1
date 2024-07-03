@@ -23,8 +23,13 @@ export const setResponse = (
 export const handler = async (event: any) => {
     console.log('Upload file with products list event', event);
 
-    const bucketName = event.Records[0].s3.bucket.name;
-    const key = event.Records[0].s3.object.key;
+    let bucketName: any;
+    let key: any;
+
+    for (const record of event.Records) {
+        bucketName = record.s3.bucket.name;
+        key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+    }
 
     try {
         const paramsForCommands = {Bucket: bucketName, Key: key}

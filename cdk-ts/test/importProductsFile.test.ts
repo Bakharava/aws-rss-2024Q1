@@ -21,7 +21,7 @@ describe('Import file handler', () => {
 
         const response = await handler(event as any);
 
-        expect(response.body).toBe({ message: "Missing file name to upload" });
+        expect(response.body).toEqual({ message: "Missing file name to upload" });
     });
 
     it('should return signed URL if name is not empty', async () => {
@@ -54,7 +54,7 @@ describe('Import file handler', () => {
 
         const response = await handler(event as any);
 
-        expect(response.statusCode).toBe(500);
-        expect(response.body).toBe({ message: "Something went wrong" });
+        expect(response.statusCode).toEqual(500);
+        expect(response.body).toEqual({ message: "Something went wrong" });
     });
 });

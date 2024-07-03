@@ -17,7 +17,7 @@ export class CdkImportStack extends cdk.Stack {
                 {
                     maxAge: 60 * 60,
                     allowedOrigins: ['*'],
-                    allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT, s3.HttpMethods.DELETE],
+                    allowedMethods: [s3.HttpMethods.PUT],
                     allowedHeaders: ['*'],
                 },
             ],
