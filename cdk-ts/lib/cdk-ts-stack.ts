@@ -9,6 +9,10 @@ import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
+import 'dotenv/config';
 
 export class CdkTsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -77,6 +81,26 @@ export class CdkTsStack extends cdk.Stack {
           tableName: "Stock",
       });
 
+      const createProductTopic = new sns.Topic(this, 'CreateProductTopic', {
+          topicName: 'CreateProductTopic',
+      });
+
+      createProductTopic.addSubscription(
+          new subs.EmailSubscription(process.env.SUBSCRIPTION_EMAIL_1!, {
+              filterPolicy: {
+                  count: sns.SubscriptionFilter.numericFilter({ greaterThanOrEqualTo: 3 }),
+              },
+          })
+      );
+
+      createProductTopic.addSubscription(
+          new subs.EmailSubscription(process.env.SUBSCRIPTION_EMAIL_2!, {
+              filterPolicy: {
+                  count: sns.SubscriptionFilter.numericFilter({ lessThan: 3 }),
+              },
+          })
+      );
+
       const fillTables = new lambda.Function(this, 'FillTables', {
           runtime: lambda.Runtime.NODEJS_20_X,
           code: lambda.Code.fromAsset('product-service/lambda'),
@@ -128,6 +152,31 @@ export class CdkTsStack extends cdk.Stack {
 
       productsTable.grantReadWriteData(createProduct);
       stockTable.grantReadWriteData(createProduct);
+
+      const catalogBatchProcess = new lambda.Function(this, 'CatalogBatchProcessFunction', {
+          runtime: lambda.Runtime.NODEJS_20_X,
+          code: lambda.Code.fromAsset('product-service/lambda'),
+          handler: 'catalogBatchProcess.handler',
+          environment: {
+              PRODUCTS_TABLE: productsTable.tableName,
+              STOCKS_TABLE: stockTable.tableName,
+              SNS_ARN: createProductTopic.topicArn,
+          }
+      });
+
+      productsTable.grantReadWriteData(catalogBatchProcess);
+      stockTable.grantReadWriteData(catalogBatchProcess);
+
+      createProductTopic.grantPublish(catalogBatchProcess);
+
+      const catalogItemsQueue = new sqs.Queue(this, 'catalogItemsQueue', {queueName: 'catalogItemsQueue'});
+
+      catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+
+      catalogBatchProcess.addEventSourceMapping('SnsTopicBatchProcessing',{
+          eventSourceArn: catalogItemsQueue.queueArn,
+          batchSize: 5
+      });
 
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,

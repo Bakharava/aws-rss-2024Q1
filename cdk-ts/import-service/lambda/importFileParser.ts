@@ -1,8 +1,10 @@
 import { CopyObjectCommand, DeleteObjectCommand ,GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import * as csv from "csv-parser";
-import { Readable } from "stream";
+import { PassThrough, Readable } from "stream";
 
 const client = new S3Client({});
+const sqsClient = new SQSClient({});
 
 export const setResponse = (
     statusCode: number = 200,
@@ -42,8 +44,15 @@ export const handler = async (event: any) => {
         const results: any[] = [];
         await new Promise<void>((resolve, reject) => {
             data
+                .pipe(new PassThrough())
                 .pipe(csv())
-                .on("data", (data) => results.push(data))
+                .on("data", async (data) => {
+                        await sqsClient.send(new SendMessageCommand({
+                            QueueUrl: process.env.SQS_QUEUE_URL,
+                            MessageBody: JSON.stringify(data)
+                        }));
+                        console.log('Sent to SQS successfully');
+                })
                 .on("end", async () => {
                     console.log("Data res: ", results);
                     await client.send(
