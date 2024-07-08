@@ -12,6 +12,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import 'dotenv/config';
 
 export class CdkTsStack extends cdk.Stack {
@@ -82,11 +83,11 @@ export class CdkTsStack extends cdk.Stack {
       });
 
       const createProductTopic = new sns.Topic(this, 'CreateProductTopic', {
-          topicName: 'CreateProductTopic',
+          topicName: 'CreateProductSNSTopic',
       });
 
       createProductTopic.addSubscription(
-          new subs.EmailSubscription(process.env.SUBSCRIPTION_EMAIL_1!, {
+          new subs.EmailSubscription(process.env.SUBSCRIPTION_EMAIL_1! ?? 'volha_bakharava@epam.com', {
               filterPolicy: {
                   count: sns.SubscriptionFilter.numericFilter({ greaterThanOrEqualTo: 3 }),
               },
@@ -94,7 +95,7 @@ export class CdkTsStack extends cdk.Stack {
       );
 
       createProductTopic.addSubscription(
-          new subs.EmailSubscription(process.env.SUBSCRIPTION_EMAIL_2!, {
+          new subs.EmailSubscription(process.env.SUBSCRIPTION_EMAIL_2! ?? 'olavlad777@gmail.com', {
               filterPolicy: {
                   count: sns.SubscriptionFilter.numericFilter({ lessThan: 3 }),
               },
@@ -159,9 +160,10 @@ export class CdkTsStack extends cdk.Stack {
           handler: 'catalogBatchProcess.handler',
           environment: {
               PRODUCTS_TABLE: productsTable.tableName,
-              STOCKS_TABLE: stockTable.tableName,
+              STOCK_TABLE: stockTable.tableName,
               SNS_ARN: createProductTopic.topicArn,
-          }
+          },
+          functionName: 'CatalogBatchProcessFunction',
       });
 
       productsTable.grantReadWriteData(catalogBatchProcess);
@@ -173,10 +175,11 @@ export class CdkTsStack extends cdk.Stack {
 
       catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
 
-      catalogBatchProcess.addEventSourceMapping('SnsTopicBatchProcessing',{
-          eventSourceArn: catalogItemsQueue.queueArn,
-          batchSize: 5
-      });
+      catalogBatchProcess.addEventSource(
+          new SqsEventSource(catalogItemsQueue, {
+              batchSize: 5,
+          })
+      );
 
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,

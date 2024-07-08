@@ -25,36 +25,39 @@ export const setResponse = (
 export const handler = async (event: any) => {
     console.log('Upload file with products list event', event);
 
-    let bucketName: any;
-    let key: any;
-
-    for (const record of event.Records) {
-        bucketName = record.s3.bucket.name;
-        key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
-    }
-
     try {
+      for (const record of event.Records) {
+        const bucketName = record.s3.bucket.name;
+        const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+
         const paramsForCommands = {Bucket: bucketName, Key: key}
         const response = await client.send(new GetObjectCommand(paramsForCommands));
-        const data = response.Body as Readable;
+        const data = response.Body;
+          console.log('Data from event: ', data);
 
-        if (!data) {
+        if (!(data instanceof Readable)) {
             throw new Error("Error of reading data from S3");
         }
-        const results: any[] = [];
-        await new Promise<void>((resolve, reject) => {
+
+        await new Promise((resolve, reject) => {
             data
                 .pipe(new PassThrough())
                 .pipe(csv())
-                .on("data", async (data) => {
-                        await sqsClient.send(new SendMessageCommand({
+                .on("data", async (data: { [key: string]: string }) => {
+                    console.log('On data', data);
+                    try {
+                        const command = new SendMessageCommand({
                             QueueUrl: process.env.SQS_QUEUE_URL,
-                            MessageBody: JSON.stringify(data)
-                        }));
+                            MessageBody: JSON.stringify(data),
+                        });
+                        await sqsClient.send(command);
                         console.log('Sent to SQS successfully');
+                    } catch (err) {
+                        console.log('Failed: ', err);
+                    }
+
                 })
                 .on("end", async () => {
-                    console.log("Data res: ", results);
                     await client.send(
                         new CopyObjectCommand({
                             Bucket: bucketName,
@@ -65,12 +68,13 @@ export const handler = async (event: any) => {
                     await client.send(
                         new DeleteObjectCommand(paramsForCommands)
                     );
-                    resolve();
+                    resolve(null);
                 })
                 .on("error", (error) => {
                     reject(error);
                 });
         });
+    }
         return setResponse(200, { message: 'File successfully parsed' });
     } catch (err) {
         return setResponse(500, { message: `Something went wrong. Error: ${err}` });

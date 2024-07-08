@@ -9,8 +9,6 @@ import { BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 import 'dotenv/config';
 
-const SQS_QUEUE_URL =  process.env.SQS_QUEUE_URL! || '';
-
 
 export class CdkImportStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -38,7 +36,7 @@ export class CdkImportStack extends cdk.Stack {
             environment: {
                 BUCKET_NAME: importBucket.bucketName,
                 BUCKET_FOLDER_NAME: "uploaded",
-                SQS_QUEUE_URL,
+                SQS_QUEUE_URL: process.env.SQS_QUEUE_URL!,
             }
         });
 
@@ -49,7 +47,7 @@ export class CdkImportStack extends cdk.Stack {
             environment: {
                 BUCKET_NAME: importBucket.bucketName,
                 BUCKET_FOLDER_NAME: "uploaded",
-                SQS_QUEUE_URL,
+                SQS_QUEUE_URL: process.env.SQS_QUEUE_URL!,
             }
         });
 
