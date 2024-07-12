@@ -6,6 +6,9 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as s3notification from 'aws-cdk-lib/aws-s3-notifications';
 import { BlockPublicAccess } from "aws-cdk-lib/aws-s3";
+import { Queue } from "aws-cdk-lib/aws-sqs";
+import 'dotenv/config';
+
 
 export class CdkImportStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -33,6 +36,7 @@ export class CdkImportStack extends cdk.Stack {
             environment: {
                 BUCKET_NAME: importBucket.bucketName,
                 BUCKET_FOLDER_NAME: "uploaded",
+                SQS_QUEUE_URL: process.env.SQS_QUEUE_URL!,
             }
         });
 
@@ -43,6 +47,7 @@ export class CdkImportStack extends cdk.Stack {
             environment: {
                 BUCKET_NAME: importBucket.bucketName,
                 BUCKET_FOLDER_NAME: "uploaded",
+                SQS_QUEUE_URL: process.env.SQS_QUEUE_URL!,
             }
         });
 
@@ -54,14 +59,23 @@ export class CdkImportStack extends cdk.Stack {
 
         parseProductsFile.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
-            actions: ['s3:GetObject', 's3:PutObject', 's3:DeleteObject'],
-            resources: [importBucket.bucketArn + "/*"],
+            actions: ['s3:GetObject', 's3:PutObject', 's3:DeleteObject', 'sqs:SendMessage'],
+            resources: [importBucket.bucketArn + "/*", process.env.SNS_ARN!],
         }))
 
         const api = new apigateway.RestApi(this, 'ImportApi', {cloudWatchRole: true,  defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: apigateway.Cors.ALL_METHODS,
             },});
+
+        const catalogItemsQueue = Queue.fromQueueArn(
+            this,
+            "ImportFileQueue",
+            process.env.SQS_ARN!,
+        );
+
+        catalogItemsQueue.grantSendMessages(parseProductsFile);
+
         const uploadFileAPI = api.root.addResource('import');
         uploadFileAPI.addMethod('GET', new apigateway.LambdaIntegration(importProductsFile));
 

@@ -21,5 +21,6 @@
     "jsx": "react-jsx"
   },
   "include": ["src"],
+  "exclude": ["cdk.out"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
