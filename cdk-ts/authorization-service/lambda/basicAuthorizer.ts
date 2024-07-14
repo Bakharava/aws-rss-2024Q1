@@ -22,7 +22,8 @@ export const handler = async function(event: any) {
 
     if (!event.authorizationToken || !token || token === 'null' || token === 'undefined') {
         console.log('Authorization DENY, status code 401')
-        return setResponse(401,  { message: "Unauthorized access" },)
+
+        return getPolicy( 'Deny', event.methodArn)
     }
 
     const buffer = Buffer.from(token, 'base64');
