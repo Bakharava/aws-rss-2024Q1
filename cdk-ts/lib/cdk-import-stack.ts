@@ -9,6 +9,12 @@ import { BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 import 'dotenv/config';
 
+const responseHeaders = {
+    "Access-Control-Allow-Origin": "'*'",
+    "Access-Control-Allow-Headers":
+        "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+    "Access-Control-Allow-Methods": "'OPTIONS,GET,PUT'"
+}
 
 export class CdkImportStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -68,6 +74,8 @@ export class CdkImportStack extends cdk.Stack {
             defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: apigateway.Cors.ALL_METHODS,
+                allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+                allowCredentials: true,
             },});
 
         const catalogItemsQueue = Queue.fromQueueArn(
@@ -87,6 +95,18 @@ export class CdkImportStack extends cdk.Stack {
         const tokenAuthorizer = new apigateway.TokenAuthorizer(this, 'TokenAuthorizerBakharava', {
             handler: basicAuthorizer,
             authorizerName: 'authorizerBakharava'
+        });
+
+        api.addGatewayResponse('ResponseUnauthorized', {
+            type: cdk.aws_apigateway.ResponseType.UNAUTHORIZED,
+            responseHeaders,
+            statusCode: '401',
+        });
+
+        api.addGatewayResponse('ResponseAccessDenied', {
+            type: cdk.aws_apigateway.ResponseType.ACCESS_DENIED,
+            responseHeaders,
+            statusCode: '403',
         });
 
         const uploadFileAPI = api.root.addResource('import');
