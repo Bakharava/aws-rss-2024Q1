@@ -63,7 +63,9 @@ export class CdkImportStack extends cdk.Stack {
             resources: [importBucket.bucketArn + "/*", process.env.SNS_ARN!],
         }))
 
-        const api = new apigateway.RestApi(this, 'ImportApi', {cloudWatchRole: true,  defaultCorsPreflightOptions: {
+        const api = new apigateway.RestApi(this, 'ImportApi', {
+            cloudWatchRole: true,
+            defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: apigateway.Cors.ALL_METHODS,
             },});
@@ -76,8 +78,25 @@ export class CdkImportStack extends cdk.Stack {
 
         catalogItemsQueue.grantSendMessages(parseProductsFile);
 
+        const basicAuthorizer = lambda.Function.fromFunctionAttributes(
+            this,
+            'basicAuthorizer',
+            { functionArn: process.env.AUTHORIZATION_ARN!, sameEnvironment: true }
+        );
+
+        const tokenAuthorizer = new apigateway.TokenAuthorizer(this, 'TokenAuthorizerBakharava', {
+            handler: basicAuthorizer,
+            authorizerName: 'authorizerBakharava'
+        });
+
         const uploadFileAPI = api.root.addResource('import');
-        uploadFileAPI.addMethod('GET', new apigateway.LambdaIntegration(importProductsFile));
+        uploadFileAPI.addMethod('GET', new apigateway.LambdaIntegration(importProductsFile), {
+            requestParameters: {
+                "method.request.querystring.name": true,
+            },
+            authorizer: tokenAuthorizer,
+            authorizationType: apigateway.AuthorizationType.CUSTOM,
+        });
 
         importBucket.addEventNotification(
             s3.EventType.OBJECT_CREATED,

@@ -24,6 +24,10 @@ function App() {
           <Route path=":id" element={<PageProductForm />} />
         </Route>
         <Route
+          path="error"
+          element={<Typography variant="h1">Unauthorized access</Typography>}
+        />
+        <Route
           path="*"
           element={<Typography variant="h1">Not found</Typography>}
         />
