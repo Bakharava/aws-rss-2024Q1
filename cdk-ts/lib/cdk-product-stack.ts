@@ -15,7 +15,7 @@ import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import 'dotenv/config';
 
-export class CdkTsStack extends cdk.Stack {
+export class CdkProductStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -184,6 +184,11 @@ export class CdkTsStack extends cdk.Stack {
       const api = new apigateway.LambdaRestApi(this, 'GetProductsListApi', {
           handler: getProductsList,
           proxy: false,
+          defaultCorsPreflightOptions: {
+              allowOrigins: apigateway.Cors.ALL_ORIGINS,
+              allowMethods: apigateway.Cors.ALL_METHODS,
+              allowHeaders: ['Content-Type', 'Authorization'],
+          },
       });
 
       const productsResource = api.root.addResource('products');
