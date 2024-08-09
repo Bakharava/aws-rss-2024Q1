@@ -1,0 +1,18 @@
+branch-defaults:
+  default:
+    environment: bakharava-bff-api-dev
+    group_suffix: null
+global:
+  application_name: bakharava-bff-api
+  branch: null
+  default_ec2_keyname: null
+  default_platform: Docker
+  default_region: eu-west-1
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: volha-bakharava
+  repository: null
+  sc: null
+  workspace_type: Application
